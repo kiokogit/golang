@@ -1,6 +1,10 @@
 package checkout_checkin
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"github.com/gin-gonic/gin"
+)
 
 
 
@@ -24,5 +28,10 @@ func CheckoutBook()(bool) {
 		return false
 	}
 	return false
+}
+
+// Handler to get all users
+func CheckoutBookAPI(c *gin.Context) {
+    c.JSON(http.StatusOK, gin.H{"details": "Ah, this has been successful"})
 }
 
