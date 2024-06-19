@@ -2,13 +2,11 @@ package checkout_checkin
 
 import (
 	"fmt"
-	"net/http"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-
-
-func CheckoutBook()(bool) {
+func CheckoutBook() bool {
 
 	fmt.Println("Please enter the book Id that should be checked out:")
 	var bookId string
@@ -18,7 +16,7 @@ func CheckoutBook()(bool) {
 	var sure int
 
 	fmt.Scanln(&sure)
-	
+
 	switch sure {
 	case 1:
 		fmt.Printf("Congratulations, %v has been checked out successfully.", bookId)
@@ -30,8 +28,7 @@ func CheckoutBook()(bool) {
 	return false
 }
 
-// Handler to get all users
+// CheckoutBookAPI Handler to get all users
 func CheckoutBookAPI(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{"details": "Ah, this has been successful"})
+	c.JSON(http.StatusOK, gin.H{"details": "Ah, this has been successful"})
 }
-

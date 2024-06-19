@@ -1,8 +1,8 @@
 package shared_utils
 
 import (
-	"fmt"
 	"bookingapp/checkout_checkin"
+	"fmt"
 )
 
 

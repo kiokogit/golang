@@ -2,7 +2,6 @@ package scraper_api
 
 import (
 	"context"
-	// "encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
@@ -49,7 +48,7 @@ func getLinkedInData(userID string) (ScrapedData, error) {
 	var scrapedData ScrapedData
 
 	loginURL := "https://www.linkedin.com/login?fromSignIn=true&trk=guest_homepage-basic_nav-header-signin"
-	profileURL := fmt.Sprintf("https://www.linkedin.com/in/%s/recent-activity/all/", userID)
+	profileURL := fmt.Sprintf("https://www.linkedin.com/in/%s/", userID)
 
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -78,8 +77,17 @@ func getLinkedInData(userID string) (ScrapedData, error) {
 	log.Println(profileURL)
 
 	// Navigate to profile page
+	var finalActivityUrl string
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(profileURL),
+		chromedp.WaitVisible(`#global-nav`, chromedp.ByID),
+		chromedp.AttributeValue(`footer a[data-test-app-aware-link]`, "href", &finalActivityUrl, nil, chromedp.ByQuery),
+	)
+
+	log.Println(finalActivityUrl)
+
+	err = chromedp.Run(ctx,
+		chromedp.Navigate(finalActivityUrl),
 		chromedp.WaitVisible(`#global-nav`, chromedp.ByID),
 	)
 
@@ -87,6 +95,7 @@ func getLinkedInData(userID string) (ScrapedData, error) {
 		log.Println("error: ", err)
 		return scrapedData, fmt.Errorf("failed to navigate to profile: %w", err)
 	}
+	// now navigate to all activity
 
 	log.Println("Loading and scrolling...")
 	// Scroll to load more posts
@@ -163,7 +172,6 @@ func scrapePost(ctx context.Context, container *cdp.Node, scrapedData *ScrapedDa
 		return nil
 	}
 
-	var likes int = 0
 	var likersData []LikerData
 
 	// Navigate to the specific LinkedIn post
@@ -183,8 +191,6 @@ func scrapePost(ctx context.Context, container *cdp.Node, scrapedData *ScrapedDa
 		return err
 	}
 
-	// likes = len(likers)
-
 	for _, liker := range likers {
 		var name, userID, title string
 		chromedp.Run(ctx,
@@ -195,11 +201,11 @@ func scrapePost(ctx context.Context, container *cdp.Node, scrapedData *ScrapedDa
 
 		// Clean up userID
 		standardB64Str := strings.Split(userID, "/")[4]
-		// decoded, _ := base64.URLEncoding.DecodeString(standardB64Str)
+		//decoded, _ := base64.StdEncoding.DecodeString(standardB64Str)
 
 		likersData = append(likersData, LikerData{
 			Name:   name,
-			UserID: string(standardB64Str),
+			UserID: standardB64Str,
 			Title:  title,
 		})
 	}
@@ -207,7 +213,7 @@ func scrapePost(ctx context.Context, container *cdp.Node, scrapedData *ScrapedDa
 	mu.Lock()
 	scrapedData.Data = append(scrapedData.Data, PostData{
 		PostID:     postID,
-		Likes:      likes,
+		Likes:      0,
 		LikersData: likersData,
 	})
 	mu.Unlock()
@@ -217,6 +223,6 @@ func scrapePost(ctx context.Context, container *cdp.Node, scrapedData *ScrapedDa
 
 // Handler to get all users
 func ScrapeDataView(c *gin.Context) {
-	info, _ := getLinkedInData("mutanumutemi")
+	info, _ := getLinkedInData("ACoAACby69gBA97b1q6Dovl2Rb5F8pvE1N8hB28")
 	c.JSON(http.StatusOK, gin.H{"details": info})
 }
